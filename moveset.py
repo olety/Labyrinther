@@ -46,13 +46,17 @@ class Moveset(object):
         logging.debug('Moveset - Mutating a moveset')
         for i in np.arange(num_bits):
             chosen = random.choice(moves_to_mutate)
-            logging.debug('Moveset - Mutating move #{} - {}'.format(chosen, self.moveset[chosen].name))
+            logging.debug('Moveset - Mutating move №{} - {}'.format(chosen, self.moveset[chosen].name))
             if repeating:
                 moves_to_mutate.remove(chosen)
             self.moveset[chosen].mutate()
+            logging.debug('Moveset - Mutated move №{} into {}'.format(chosen, self.moveset[chosen].name))
         logging.debug('Moveset - New moveset:')
         if logging.DEBUG:
             self.print_moves()
+
+    def enumerated(self):
+        return enumerate(self.moveset)
 
     def _parse_move_string(self, string):
         if string is None or len(string) % 2:
@@ -71,7 +75,7 @@ class Moveset(object):
     def print_moves(self):
         logging.info('-- Printing moveset ({0} moves) --'.format(len(self.moveset)))
         for index, move in enumerate(self.moveset):
-            logging.info('\t№{0} - {1}'.format(index+1, move.direction.name))
+            logging.info('\t№{0} - {1}'.format(index, move.direction.name))
         logging.info('-- Finished printing moveset --')
 
     @property
@@ -88,8 +92,8 @@ class Moveset(object):
 # mvs = Moveset(string='0011100101')
 # mvs.print_moves()
 
-logging.basicConfig(level=logging.DEBUG)
-rand_mvs = Moveset(5)
-rand_mvs.print_moves()
-rand_mvs.mutate()
+if __name__ == '__main__':
+    rand_mvs = Moveset(5)
+    rand_mvs.print_moves()
+    rand_mvs.mutate()
 
