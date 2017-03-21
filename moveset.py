@@ -60,7 +60,7 @@ class Moveset(object):
 
     def _parse_move_string(self, string):
         if string is None or len(string) % 2:
-            raise Exception('bad string len in _parse_move_string in Moveset')
+            raise Exception('Moveset - bad string len in _parse_move_string in Moveset')
         iterator_str = iter(string)
         # '00011011' -> ['00', '01', '10', '11']
         logging.debug('Parsing move string {}'.format(string))
@@ -68,15 +68,15 @@ class Moveset(object):
 
     def _parse_move_array(self, str_arr):
         if len(str_arr) <= 0:
-            raise Exception('bad move array length')
-        logging.debug('Parsing move array {}'.format(str_arr))
+            raise Exception('Moveset - Bad move array length')
+        logging.debug('Moveset - Parsing move array {}'.format(str_arr))
         self.moveset = np.array([Move.from_string(string) for string in str_arr])
 
     def print_moves(self):
-        logging.info('-- Printing moveset ({0} moves) --'.format(len(self.moveset)))
+        logging.info('Moveset - Printing moveset ({0} moves)'.format(len(self.moveset)))
         for index, move in enumerate(self.moveset):
             logging.info('\t№{0} - {1}'.format(index, move.direction.name))
-        logging.info('-- Finished printing moveset --')
+        logging.info('Moveset -  Finished printing moveset')
 
     @property
     def num_bits(self):
