@@ -14,13 +14,12 @@ class Direction(IntEnum):
     # 00^1 -> 01, etc
 
 
-class Move(object):
-
+class Move():
     def __init__(self, direction):
         self.direction = Direction(direction)
 
     def mutate(self):
-        self.direction = Direction(self.direction^1)
+        self.direction = Direction(self.direction ^ 1)
 
     @property
     def name(self):
@@ -31,14 +30,16 @@ class Move(object):
         return Move(Direction(int(string, 2)))
 
 
-class Moveset(object):
+class Moveset():
     # It's more of a move list :D
     def __init__(self, num_moves=0, string=None):
         if num_moves:
             str_arr = np.array(['{0:02b}'.format(random.getrandbits(2)) for i in range(0, num_moves)])
             self._parse_move_array(str_arr)
-        else:
+        elif string:
             self._parse_move_string(string)
+        else:
+            raise Exception('Moveset - can\'t create moveset from nothing')
 
     def mutate(self, num_bits=1, repeating=False):
         # Repeating = True enables mutating one move more than once
@@ -78,6 +79,12 @@ class Moveset(object):
             logging.info('\t№{0} - {1}'.format(index, move.direction.name))
         logging.info('Moveset -  Finished printing moveset')
 
+    def __str__(self):
+        return ' '.join([move.direction.name for move in self.moveset])
+
+    def __len__(self):
+        return len(self.moveset)
+
     @property
     def num_bits(self):
         return self.moveset.size * 2
@@ -85,6 +92,26 @@ class Moveset(object):
     @property
     def move_string(self):
         return ''.join('{0:02b}'.format(move.direction.value) for move in self.moveset)
+
+    @staticmethod
+    def crossover(parent1, parent2, num_points):
+        if num_points < 0 or num_points > len(parent1) or num_points > len(parent2):
+            raise Exception('Moveset - bad number of points for crossover = {}'.format(num_points))
+        # crossover_pts = \
+        #     [random.randint(range(
+        #      len(parent1) if len(parent1) < len(parent2) else len(parent2)))
+        #      for i in range(num_points)]
+        child = list()
+        parents = (parent1, parent2)
+        smaller_len = len(parent1) if len(parent1) < len(parent2) else len(parent2)
+        crossover_points = sorted([random.randint(0, smaller_len) for i in range(num_points)])
+        current_parent = 0
+        current_point = 0
+        for point in crossover_points:
+            child.append(parents[current_parent][current_point:point])
+            current_point = point
+            current_parent ^= 1
+
 
 # m = Move(Direction.TOP)
 # print('Direction : {0}, binary : {1:02b}, int : {2}'.format(m.direction.name, m.direction.value, m.direction.value))

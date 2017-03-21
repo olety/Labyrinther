@@ -5,10 +5,9 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib import cm
 import logging
-import re
 
 
-class Labyrinth(object):
+class Labyrinth():
 
     def __init__(self, random_init=False, rows=5, cols=5, file=None):
         if random_init is False and file is None:
@@ -107,12 +106,11 @@ class Labyrinth(object):
     def process_moveset(self, moveset):
         movecells = self.movecells.copy()
         movecells[:, :, 4] = 0  # Clearing visit history
-        distance = 0
         bumps = 0
         redundancy = 0
         row = 0
         col = 0
-        logging.info('Labyrinth - Processing moveset')
+        logging.info('Labyrinth - Processing moveset: {}'.format(moveset))
         for index, move in moveset.enumerated():
             if movecells[row, col, 4] == 1:
                 redundancy += 1
@@ -129,6 +127,7 @@ class Labyrinth(object):
                 elif move.direction == Direction.RIGHT:
                     col += 1
         moves = len(moveset) - bumps
+        distance = self.rows - row + self.cols - col
         return distance, bumps, redundancy, moves
 
     def print_arr(self, open_ends=True):
@@ -188,6 +187,10 @@ class Labyrinth(object):
             logging.debug('Labyrinth - opening movecell exit')
             movecells[rows-1, cols-1, Direction.RIGHT] = 1
         return movecells
+
+    def __str__(self):
+        return '{}x{} Labyrinth. {}x multiplier is used in a file representation. num_moves_max = {}'\
+            .format(self.rows, self.cols, 10, self.num_moves_max)
 
     @staticmethod
     def _cells_to_arr(movecells, open_endpoints=False, multiplier=10, line_thickness_hor=1, line_thickness_ver=1):
