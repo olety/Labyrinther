@@ -102,7 +102,8 @@ class Labyrinth:
             pd.DataFrame(data=self.array_closed.astype(int)) \
                 .to_csv(f, sep='-', header=False, index=False)
 
-    def plot_moveset(self, moveset):
+    def plot_moveset(self, moveset, show=True, savefig=False, file_name='', **kwargs):
+        left_title = kwargs.get('left_title', '')
         movecells = self.movecells.copy()
         path = [[4.5, 4.5]]
         bumps = []
@@ -132,10 +133,10 @@ class Labyrinth:
         path_ys = [p[0] for p in path]
         bumps_xs = [b[1] for b in bumps]
         bumps_ys = [b[0] for b in bumps]
-        print(len(bumps))
+        # Plotting
         ax.scatter(bumps_xs, bumps_ys, color='#ff0000', s=1700, alpha=0.1, marker='^', zorder=1)
-        ax.scatter(path_xs[0], path_ys[0], color='#ff6a00', s=1500, marker='o', alpha=1, zorder=2)
-        ax.scatter(path_xs[-1], path_ys[-1], color='#c447e0', s=1500, marker='X', alpha=1, zorder=2)
+        ax.scatter(path_xs[0], path_ys[0], color='#ff6a00', s=1500, marker='o', alpha=1, zorder=2, label='start')
+        ax.scatter(path_xs[-1], path_ys[-1], color='#c447e0', s=1500, marker='X', alpha=1, zorder=2, label='finish')
         for i in range(len(path) - 2, -1, -1):
             p = FancyArrowPatch(posA=[path_xs[i], path_ys[i]], posB=[path_xs[i + 1], path_ys[i + 1]],
                                 connectionstyle='arc3, rad=0.5',
@@ -147,7 +148,27 @@ class Labyrinth:
         plt.axis('off')
         plt.title('Labyrinth')
         plt.title('{}x{}'.format(self.rows, self.cols), loc='right')
-        plt.show()
+        if left_title:
+            plt.title(left_title, loc='left')
+
+        # # Now add the legend with some customizations.
+        # legend = ax.legend(loc='center left', shadow=True)
+        #
+        # # The frame is matplotlib.patches.Rectangle instance surrounding the legend.
+        # frame = legend.get_frame()
+        # frame.set_facecolor('0.90')
+        #
+        # # Set the fontsize
+        # for label in legend.get_texts():
+        #     label.set_fontsize('large')
+        #
+        # for label in legend.get_lines():
+        #     label.set_linewidth(1.5)  # the legend line width
+
+        if show:
+            plt.show()
+        if savefig and file_name:
+            f.savefig(file_name, dpi=500)
 
     def process_moveset(self, moveset):
         movecells = self.movecells.copy()
@@ -203,7 +224,7 @@ class Labyrinth:
 
     def plot_arr(self, arr, show=True, block=True):
         self.ax.imshow(arr, cmap=cm.Greys, interpolation='none')
-        if (show):
+        if show:
             plt.show(block=block)
 
     @staticmethod

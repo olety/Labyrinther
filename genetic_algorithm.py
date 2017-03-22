@@ -9,44 +9,37 @@ import logging
 
 
 class GeneticAlgorithm:
-    def __init__(self, labyrinth, num_population=100, min_moves_mult=0.5, max_moves_mult=3, max_iter=100, elitism_num=5,
-                 crossover_rate=0.8, crossover_pts='random', mutation_rate=0.001, selection='roulette', **kwargs):
+    def __init__(self, labyrinth, **kwargs):
         # Setting the variables
         self.labyrinth = labyrinth
-        # Numpy
-        # self.all_pops = np.empty((max_iter, num_population, 2))  # generation -> person -> moveset/fitness
-        # self.pop = np.empty((num_population, 2), dtype=[('moveset', Moveset), ('fitness', float)])
-        # self.next_pop = np.empty((num_population, 2), dtype=[('moveset', Moveset), ('fitness', float)])
+        # Kwargs: General
+        self.file_name = kwargs.get('file_name', 'last_run')
+        self.save = kwargs.get('save', True)
+        # Kwargs: Algorithm - related
+        self.roulette_mult = kwargs.get('roulette_mult', 1)
+        self.crossover_rate = kwargs.get('crossover_rate', 0.8)
+        self.crossover_pts = kwargs.get('crossover_pts', 'random')
+        self.mutation_rate = kwargs.get('mutation_rate', 0.001)
+        self.selection = kwargs.get('selection', 'roulette')
+        self.elites_cnt = kwargs.get('elitism_num', 5)
+        self.pop_cnt = kwargs.get('num_population', 100)
+        self.min_moves_mult = kwargs.get('min_moves_mult', 0.5)
+        self.max_moves_mult = kwargs.get('max_moves_mult', 3)
+        self.max_iter = kwargs.get('max_iter', 100)
 
-        # General
-        if 'file_name' in kwargs:
-            self.file_name = kwargs['file_name']
-        else:
-            self.file_name = 'last_run'
-        # Algorithm - related
-        self.min_moves_mult = min_moves_mult
-        self.max_moves_mult = max_moves_mult
-        self.max_iter = max_iter
-        self.pop_cnt = num_population
-        self.elites_cnt = elitism_num
-        if 'roulette_mult' in kwargs:
-            self.roulette_mult = kwargs['roulette_mult']
-        else:
-            self.roulette_mult = 1
-        if crossover_pts == 'random':
-            crossover_pts = random.randint(1, 3)
-        self.crossover_rate = crossover_rate
-        self.crossover_pts = crossover_pts
-        self.mutation_rate = mutation_rate
+        if self.crossover_pts == 'random':
+            self.crossover_pts = random.randint(1, 3)
+
         # Generating the starting population
         self._generate_initial_pop()
+
         # Doing selection
-        if selection == 'roulette':
+        if self.selection == 'roulette':
             self.found_winner, self.max_gen = self._roulette_selection()
-        elif selection == 'random':
+        elif self.selection == 'random':
             self.found_winner, self.max_gen = self._random_search()
         else:
-            raise Exception('GA - Wrong selection method: {}'.format(selection))
+            raise Exception('GA - Wrong selection method: {}'.format(self.selection))
 
     def _generate_initial_pop(self):
         self._generate_random_pop()
@@ -62,7 +55,6 @@ class GeneticAlgorithm:
 
     @staticmethod
     def _fitness(distance, bumps, redundancy, moves, length):
-        # Using sigmoid (expit) function to eliminate negative vals
         return 0.3 * moves + 0.5 * length - redundancy - 10 * distance - bumps
 
     def _roulette_selection(self):
@@ -80,30 +72,17 @@ class GeneticAlgorithm:
                 person[1] = GeneticAlgorithm._fitness(distance, bumps, redundancy, moves, len(person[0]))
                 if distance == 0:
                     logging.info('GA - gen {} - Acquired a winner - moveset {}'.format(gen, person[0]))
-                    self.found_winner = True
                     self.winner_moveset = person[0]
-                    self.pop[:, 1] += (self.pop[:, 1] - self.pop[:, 1].min()) / self.pop[:, 1].ptp(0)
-                    self.winner_fitness = 1
-                    # self.all_pops = np.vstack((self.all_pops, self.pop))
-                    return True, gen
+            # Ensuring that fitness is >= 1
             logging.debug('Starting initial population fitness eval')
             logging.info('Sorting the population')
-            # Sorting the pop and adjusting the fitness to be always >= 1
             self.pop = self.pop[np.flipud(self.pop[:, 1].argsort())]
             self.pop[:, 1] -= self.pop[:, 1].min() - 1
+            if self.winner_moveset:
+                indices = np.find(self.pop[:, 0] == self.winner_moveset)
+                self.winner_fitness = self.pop[indices[0], 1]
+                return True, gen
             fitness_sum = self.pop[:, 1].sum()
-
-            # ptp = self.pop[:, 1].ptp()
-            # if ptp == 0:
-            #     # print('Converged to a local minimum.')
-            #     ptp = 0.1
-            # self.pop[:, 1] = 100*(self.pop[:, 1] - self.pop[:, 1].min())/ptp
-
-            # sum_fitness = np.sum(self.pop[:, 1])
-            # Logging stuff
-            # logging.info('Gen {} fitness sum = {}'.format(gen, sum_fitness))
-            # logging.info('Gen {} fitness avg = {}'.format(gen, np.mean(self.pop[:, 1])))
-
             # Determine best ones - Make the roulette
             logging.info('Filling in the roulette')
             curr_pt = 0
@@ -114,12 +93,10 @@ class GeneticAlgorithm:
                 roulette[curr_pt:curr_pt + part] = np.repeat(person[0], part)
                 curr_pt += part
             logging.debug('Filled roulette: {}'.format(roulette))
-
             # Elitism
             logging.info('Filling in the elites')
             for i in range(self.elites_cnt):
                 self.next_pop[i][0] = self.pop[i][0]
-
             # Perform crossover
             logging.info('Processing crossover')
             for i, person in enumerate(self.pop[:-self.elites_cnt]):
@@ -128,20 +105,14 @@ class GeneticAlgorithm:
                         person[0].crossover(random.choice(roulette), self.crossover_pts)
                 else:
                     self.next_pop[self.elites_cnt + i][0] = person[0]
-
             # Perform mutations
             logging.info('Processing mutations')
             for person in self.next_pop:
                 if random.uniform(0, 1) <= self.mutation_rate:
                     person[0].mutate()
-
             # Save the values for the history view
             logging.info('Saving the values and moving onto the next gen')
-            # self.all_pops = np.vstack((self.all_pops, self.pop))
-            self.prev_pop = self.pop
             self.pop = self.next_pop
-            # plt.plot(self.pop[:, 1])
-            # plt.show()
         return False, gen + 1
 
     def print_result(self):
@@ -152,28 +123,24 @@ class GeneticAlgorithm:
             print('This algorithm didn\'t find a winner yet :(')
 
     def save_data(self):
-        # if self.all_pops.size > 0:
-        #     if self.found_winner:
-        #         self.all_pops = self.all_pops[self.pop_cnt:].reshape((self.max_gen + 1, self.pop_cnt, 2))
-        #     else:
-        #         self.all_pops = self.all_pops[self.pop_cnt:].reshape((self.max_gen, self.pop_cnt, 2))
-        #     np.save(self.file_name, self.all_pops)
-        # else:
-        #     np.save(self.file_name, [self.pop, self.max_gen])
-        pass
+        np.save(self.file_name, [self.pop, self.max_gen, self.winner_moveset, self.labyrinth, self.selection])
 
-    # @staticmethod
-    # def analyze(filename):
-    #     all_pops = np.load(filename + '.npy')
-    #     max = -100000000
-    #     max_person = None
-    #     for i, gen in enumerate(all_pops):
-    #         for j, person in enumerate(gen):
-    #             if person[1] >= max:
-    #                 max = person[1]
-    #                 max_person = person[0]
-    #     # print(all_pops)
-    #     print(max, max_person)
+    @staticmethod
+    def plot_fitness(pop):
+        f, ax = plt.subplots()
+        ax.scatter([range(len(pop))], pop[:, 1])
+        plt.show()
+
+    @staticmethod
+    def analyze(filename):
+        saved = np.load(filename + '.npy')
+        pop = saved[0]
+        num_gen = saved[1]
+        winner_moveset = saved[2]
+        labyrinth = saved[3]
+        print('Num generations = {}'.format(num_gen))
+        labyrinth.plot_moveset(winner_moveset)
+        GeneticAlgorithm.plot_fitness(pop)
 
     def _generate_random_moveset(self):
         return Moveset(random.randint(
@@ -193,7 +160,7 @@ class GeneticAlgorithm:
 
     def plot_best(self):
         if self.found_winner:
-            self.labyrinth.plot_moveset(self.winner_moveset)
+            self.labyrinth.plot_moveset(self.winner_moveset)  # , savefig=True, file_name='labyrinth.png')
         elif self.all_pops.size > 0:
             print(self.all_pops.shape)
             self.labyrinth.plot_moveset(self.all_pops[self.all_pops.shape[0] - 1, 0])
@@ -248,6 +215,7 @@ def run(num_tests):
     plt.plot(iters)
     plt.show()
 
+
 if __name__ == '__main__':
     lab = Labyrinth(file='lab_test.csv')
     print('Starting GA')
@@ -256,4 +224,4 @@ if __name__ == '__main__':
     print(ga.found_winner)
     if ga.found_winner:
         ga.plot_best()
-    # run(5)
+        # run(5)
