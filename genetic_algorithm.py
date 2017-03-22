@@ -2,7 +2,6 @@ from labyrinth import Labyrinth
 from moveset import Moveset
 import numpy as np
 import math
-import scipy.special as scp
 from matplotlib import pyplot as plt
 import random
 import logging
@@ -12,9 +11,11 @@ class GeneticAlgorithm:
     def __init__(self, labyrinth, **kwargs):
         # Setting the variables
         self.labyrinth = labyrinth
+
         # Kwargs: General
         self.file_name = kwargs.get('file_name', 'last_run')
         self.save = kwargs.get('save', True)
+
         # Kwargs: Algorithm - related
         self.roulette_mult = kwargs.get('roulette_mult', 1)
         self.crossover_rate = kwargs.get('crossover_rate', 0.8)
@@ -26,7 +27,7 @@ class GeneticAlgorithm:
         self.min_moves_mult = kwargs.get('min_moves_mult', 0.5)
         self.max_moves_mult = kwargs.get('max_moves_mult', 3)
         self.max_iter = kwargs.get('max_iter', 100)
-
+        self.avg_fitness = []
         if self.crossover_pts == 'random':
             self.crossover_pts = random.randint(1, 3)
 
@@ -42,27 +43,23 @@ class GeneticAlgorithm:
             raise Exception('GA - Wrong selection method: {}'.format(self.selection))
 
     def _generate_initial_pop(self):
-        self._generate_random_pop()
-        self.next_pop = np.array([[None, 0] for _ in range(self.pop_cnt)])
-        # self.next_pop = self.pop.copy()
-        # self.all_pops = self.pop.copy()
-
-    def _generate_random_pop(self):
         self.pop = np.array([[Moveset(random.randint(
             int(self.labyrinth.num_moves_max * self.min_moves_mult),
             int(self.labyrinth.num_moves_max * self.max_moves_mult))), 0]
                              for _ in range(self.pop_cnt)])
+        self.next_pop = np.array([[None, 0] for _ in range(self.pop_cnt)])
 
-    @staticmethod
-    def _fitness(distance, bumps, redundancy, moves, length):
-        return 0.3 * moves + 0.5 * length - redundancy - 10 * distance - bumps
+    def _generate_random_moveset(self):
+        return Moveset(random.randint(
+            int(self.labyrinth.num_moves_max * self.min_moves_mult),
+            int(self.labyrinth.num_moves_max * self.max_moves_mult)))
 
     def _roulette_selection(self):
         self.prev_pop = []
         logging.info('Starting roulette selection')
         roulette = np.empty(self.pop_cnt * self.roulette_mult, dtype=object)
         logging.debug('Inited empty roulette with size {}'.format(roulette.shape))
-        self.found_winner = False
+        self.winner_moveset = None
         for gen in range(self.max_iter):
             logging.info('Generation №{}'.format(gen))
             # Rank the population
@@ -78,8 +75,9 @@ class GeneticAlgorithm:
             logging.info('Sorting the population')
             self.pop = self.pop[np.flipud(self.pop[:, 1].argsort())]
             self.pop[:, 1] -= self.pop[:, 1].min() - 1
+            self.avg_fitness.append(np.mean(self.pop[:, 1]))
             if self.winner_moveset:
-                indices = np.find(self.pop[:, 0] == self.winner_moveset)
+                indices = np.where(self.pop[:, 0] == self.winner_moveset)
                 self.winner_fitness = self.pop[indices[0], 1]
                 return True, gen
             fitness_sum = self.pop[:, 1].sum()
@@ -115,38 +113,6 @@ class GeneticAlgorithm:
             self.pop = self.next_pop
         return False, gen + 1
 
-    def print_result(self):
-        if self.found_winner:
-            print('Found a winner moveset! It was in gen {}, fitness: {}, moveset:{}'
-                  .format(self.max_gen, self.winner_fitness, self.winner_moveset))
-        else:
-            print('This algorithm didn\'t find a winner yet :(')
-
-    def save_data(self):
-        np.save(self.file_name, [self.pop, self.max_gen, self.winner_moveset, self.labyrinth, self.selection])
-
-    @staticmethod
-    def plot_fitness(pop):
-        f, ax = plt.subplots()
-        ax.scatter([range(len(pop))], pop[:, 1])
-        plt.show()
-
-    @staticmethod
-    def analyze(filename):
-        saved = np.load(filename + '.npy')
-        pop = saved[0]
-        num_gen = saved[1]
-        winner_moveset = saved[2]
-        labyrinth = saved[3]
-        print('Num generations = {}'.format(num_gen))
-        labyrinth.plot_moveset(winner_moveset)
-        GeneticAlgorithm.plot_fitness(pop)
-
-    def _generate_random_moveset(self):
-        return Moveset(random.randint(
-            int(self.labyrinth.num_moves_max * self.min_moves_mult),
-            int(self.labyrinth.num_moves_max * self.max_moves_mult)))
-
     def _random_search(self):
         found = False
         i = 0
@@ -158,70 +124,137 @@ class GeneticAlgorithm:
                 i += 1
         return found, i
 
+    def print_result(self):
+        if self.found_winner:
+            print('Found a winner moveset! It was in gen {}, fitness: {}, moveset:{}'
+                  .format(self.max_gen, self.winner_fitness, self.winner_moveset))
+        else:
+            print('This algorithm didn\'t find a winner yet :(')
+
     def plot_best(self):
         if self.found_winner:
             self.labyrinth.plot_moveset(self.winner_moveset)  # , savefig=True, file_name='labyrinth.png')
-        elif self.all_pops.size > 0:
-            print(self.all_pops.shape)
-            self.labyrinth.plot_moveset(self.all_pops[self.all_pops.shape[0] - 1, 0])
-            # plt.show()
+        elif self.pop:
+            self.labyrinth.plot_moveset(self.pop[0, 0])
+
+    def save_data(self):
+        np.save(self.file_name, [self.pop, self.max_gen, self.winner_moveset,
+                                 self.labyrinth, self.selection, self.avg_fitness])
+
+    @staticmethod
+    def _fitness(distance, bumps, redundancy, moves, length):
+        return 0.3 * moves + 0.5 * length - redundancy - 10 * distance - bumps
+
+    @staticmethod
+    def plot_fitness_pop(pop):
+        f, ax = plt.subplots()
+        ax.plot([range(len(pop))], pop[:, 1])
+        plt.show()
+
+    @staticmethod
+    def plot_fitness_avg(fit):
+        f, ax = plt.subplots()
+        ax.plot(np.arange(len(fit)), fit)
+        plt.show()
+
+    def analyze(self):
+        print('Started analysis:')
+        print('Num generations = {}'.format(self.max_gen))
+        if self.winner_moveset:
+            self.labyrinth.plot_moveset(self.winner_moveset)
+        if self.pop.all():
+            GeneticAlgorithm.plot_fitness_pop(self.pop)
+        if self.avg_fitness:
+            GeneticAlgorithm.plot_fitness_avg(self.avg_fitness)
+
+    @staticmethod
+    def analyze_file(filename):
+        saved = np.load(filename + '.npy')
+        pop = saved[0]
+        num_gen = saved[1]
+        winner_moveset = saved[2]
+        labyrinth = saved[3]
+        fitness_avg = saved[4]
+        print('Num generations = {}'.format(num_gen))
+        labyrinth.plot_moveset(winner_moveset)
+        GeneticAlgorithm.plot_fitness(pop)
+        GeneticAlgorithm.plot_fitness_avg(fitness_avg)
 
 
 def run(num_tests):
-    lab = Labyrinth(file='lab_test.csv')
-    num_won = 0
+    lab = Labyrinth(file='5x5.csv')
+    ga_won = 0
     gens = []
-    fitnesses = []
-    all_last_fitnesses = []
+    fitness = []
     print('Running GA tests ({})'.format(num_tests))
     for i in range(num_tests):
         print('Test №{} - '.format(i), end='')
         ga = GeneticAlgorithm(lab, elitism_num=2, num_population=100, max_iter=150, crossover_pts=1,
                               roulette_mult=2, max_moves_mult=2, file_name='try_{}'.format(i))
         ga.save_data()
-        all_last_fitnesses.append(ga.prev_pop[:, 1])
         if ga.found_winner:
             print('Found winner')
-            num_won += 1
+            ga_won += 1
             gens.append(ga.max_gen)
-            fitnesses.append(ga.winner_fitness)
+            fitness.append(ga.pop)
         else:
             gens.append(0)
-            fitnesses.append(0)
+            fitness.append(ga.pop)
             print('Didn\'t find winner')
+    fitness = np.array(fitness)
+    print(fitness.shape)
     print('Stats:\n№ won: \t{}\n% won: \t{}\n№ gens req (avg): \t{}\nAvg fitness: \t{}'
-          .format(num_won, 100 * num_won / num_tests,
-                  np.mean(gens), np.mean(fitnesses)))
-    for fitness in all_last_fitnesses:
-        plt.figure()
-        plt.plot(fitness)
-    plt.figure()
-    plt.plot(gens)
+          .format(ga_won, 100 * ga_won / num_tests,
+                  np.mean(gens), np.mean(fitness[:, :, 1])))
+    # num_subplots = 0
+    # plt.autoscale = True
+    # f, ax = plt.subplot(2, len(fitness))
+    #
+    # for i, pop in enumerate(fitness[:, :, 1]):
+    #     plt.subplot()
+    #     ax[0][i].plot(pop[:, 1])
+    ax_gens = plt.subplot(211)
+    ax_gens.set_ylim([math.ceil(min(gens) - 0.5 * (max(gens) - min(gens))),
+                      math.ceil(min(gens) + 0.5 * (max(gens) - min(gens)))])
+    plt.bar(np.arange(num_tests), width=0.35, height=gens, color='m')
     print('Running random search tests ({})'.format(num_tests))
-    iters = []
-    for i in range(1):
+    iterations = []
+    rand_won = 0
+    for i in range(num_tests):
         print('Test №{} - '.format(i), end='')
         ga = GeneticAlgorithm(lab, selection='random', min_moves_mult=0.5, max_moves_mult=2,
                               file_name='rng_try_{}'.format(i))
         if ga.found_winner:
             print('Found winner')
-            num_won += 1
+            rand_won += 1
         else:
             print('Didn\'t find winner')
-        iters.append(ga.max_gen)
+        iterations.append(ga.max_gen)
     print('Stats:\n№ won: \t{}\n% won: \t{}\n№ iters (avg): \t{}'
-          .format(num_won, 100 * num_won / num_tests, np.mean(iters)))
-    plt.figure()
-    plt.plot(iters)
+          .format(rand_won, 100 * rand_won / num_tests, np.mean(iterations)))
+
+    ax_iterations = plt.subplot(212, sharex=ax_gens)
+    ax_iterations.set_ylim([math.ceil(min(iterations) - 0.5 * (max(iterations) - min(iterations))),
+                      math.ceil(min(iterations) + 0.5 * (max(iterations) - min(iterations)))])
+    plt.bar(np.arange(num_tests), width=0.35, height=iterations, color='y')
+
+    # ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
     plt.show()
 
 
 if __name__ == '__main__':
-    lab = Labyrinth(file='lab_test.csv')
+    # logging.basicConfig(level=logging.DEBUG)
+    lab = Labyrinth(file='10x10.csv')
+    # lab.plot_arr(lab.array_closed)
     print('Starting GA')
     ga = GeneticAlgorithm(lab)
+    i = 0
+    while not ga.found_winner:
+        ga = GeneticAlgorithm(lab)
+        i += 1
+        print(i)
     # print(ga.all_pops)
-    print(ga.found_winner)
-    if ga.found_winner:
-        ga.plot_best()
-        # run(5)
+    # print(ga.found_winner)
+
+    ga.analyze()
+    # run(2)

@@ -19,7 +19,7 @@ class Move:
         self.direction = Direction(direction)
 
     def mutate(self):
-        self.direction = Direction(self.direction ^ 1)
+        self.direction = Direction(self.direction ^ random.randint(1, 2))
 
     def __str__(self):
         return self.direction.name
@@ -50,14 +50,15 @@ class Moveset:
         # Repeating = True enables mutating one move more than once
         moves_to_mutate = list(range(len(self.move_list)))
         logging.debug('Moveset - Mutating a moveset')
+        # Doing it this way  because I think that it's faster for longer moves than changing string and reiniting
         for i in range(num_bits):
             chosen = random.choice(moves_to_mutate)
             # print(chosen, self.move_list[chosen], self.move_list)
-            logging.debug('Moveset - Mutating move №{} - {}'.format(chosen, self.move_list[chosen].name))
+            # logging.debug('Moveset - Mutating move №{} - {}'.format(chosen, self.move_list[chosen].name))
             if repeating:
                 moves_to_mutate.remove(chosen)
             self.move_list[chosen].mutate()
-            logging.debug('Moveset - Mutated move №{} into {}'.format(chosen, self.move_list[chosen].name))
+            # logging.debug('Moveset - Mutated move №{} into {}'.format(chosen, self.move_list[chosen].name))
         # logging.debug('Moveset - New moveset:')
         # if logging.DEBUG:
         #     self.print_moves()
@@ -133,6 +134,7 @@ class Moveset:
 if __name__ == '__main__':
     # Just testing different things
     rand_mvs = Moveset(5)
-    rand_mvs.print_moves()
-    rand_mvs.mutate()
+    print([item.name for item in rand_mvs.move_list])
+    print(rand_mvs.move_string)
+    # rand_mvs.mutate()
 

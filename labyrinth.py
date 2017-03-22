@@ -10,13 +10,15 @@ import logging
 
 
 class Labyrinth:
-    def __init__(self, random_init=False, rows=5, cols=5, file=None):
-        if random_init is False and file is None:
+    def __init__(self, rows=5, cols=5, file=None):
+        if (not rows or not cols) and file is None:
             raise Exception('Can\'t make a labyrinth out of nothing')
         logging.debug('Labyrinth - started processing labyrinth')
-        logging.debug('Labyrinth - Shape: [{},{}], random = {}, file={}'
-                      .format(rows, cols, random_init, file))
-        if random_init is True:
+        logging.debug('Labyrinth - Shape: [{},{}], file={}'
+                      .format(rows, cols, file))
+        if file:
+            self._from_file(file)
+        else:
             self.rows = int(rows)
             self.cols = int(cols)
             self.movecells = np.zeros((self.rows, self.cols, 5))
@@ -25,8 +27,7 @@ class Labyrinth:
             self.array_closed = Labyrinth._cells_to_arr(self.movecells)
             self.array_open = Labyrinth._cells_to_arr(self.movecells, True)
             logging.debug('Labyrinth - converted movecells to array')
-        elif file:
-            self._from_file(file)
+
         logging.debug('Labyrinth - array shape is {}'.format(self.array_closed.shape))
         # Default multiplier is 10 so we have to divide by 10**2
         self.num_moves_max = self.array_closed.shape[0] * self.array_closed.shape[1] / 100
@@ -134,13 +135,18 @@ class Labyrinth:
         bumps_xs = [b[1] for b in bumps]
         bumps_ys = [b[0] for b in bumps]
         # Plotting
-        ax.scatter(bumps_xs, bumps_ys, color='#ff0000', s=1700, alpha=0.1, marker='^', zorder=1)
-        ax.scatter(path_xs[0], path_ys[0], color='#ff6a00', s=1500, marker='o', alpha=1, zorder=2, label='start')
-        ax.scatter(path_xs[-1], path_ys[-1], color='#c447e0', s=1500, marker='X', alpha=1, zorder=2, label='finish')
+        ax.scatter(bumps_xs, bumps_ys, color='#ff0000', s=(1800 - self.rows * self.cols * 12), alpha=0.1, marker='^',
+                   zorder=1)
+        ax.scatter(path_xs[0], path_ys[0], color='#ff6a00', s=(2000 - self.rows * self.cols * 15), marker='o', alpha=1,
+                   zorder=2, label='start')
+        ax.scatter(path_xs[-1], path_ys[-1], color='#c447e0', s=(2000 - self.rows * self.cols * 15), marker='X',
+                   alpha=1, zorder=2, label='finish')
         for i in range(len(path) - 2, -1, -1):
             p = FancyArrowPatch(posA=[path_xs[i], path_ys[i]], posB=[path_xs[i + 1], path_ys[i + 1]],
                                 connectionstyle='arc3, rad=0.5',
-                                arrowstyle='simple, head_width=20, head_length=15', edgecolor='#5f5d63',
+                                arrowstyle='simple, head_width={}, head_length={}'
+                                .format(30 - (self.rows + self.cols), 25 - (self.rows + self.cols)),
+                                edgecolor='#5f5d63',
                                 facecolor='#42c8f4',
                                 zorder=2 + i)
             ax.add_artist(p)
@@ -223,7 +229,7 @@ class Labyrinth:
                 print()
 
     def plot_arr(self, arr, show=True, block=True):
-        self.ax.imshow(arr, cmap=cm.Greys, interpolation='none')
+        plt.imshow(arr, cmap=cm.Greys, interpolation='none')
         if show:
             plt.show(block=block)
 
