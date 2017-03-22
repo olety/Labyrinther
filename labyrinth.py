@@ -7,7 +7,7 @@ from matplotlib import cm
 import logging
 
 
-class Labyrinth():
+class Labyrinth:
 
     def __init__(self, random_init=False, rows=5, cols=5, file=None):
         if random_init is False and file is None:
@@ -91,9 +91,6 @@ class Labyrinth():
             next_path = self._next_cell(next_row, next_col)
         return True
 
-    def get_fitness(self, moveset):
-        pass
-
     def save_file(self, name):
         # with open(name, 'w') as f:
         #     f.writelines(
@@ -110,11 +107,18 @@ class Labyrinth():
         redundancy = 0
         row = 0
         col = 0
+
         logging.info('Labyrinth - Processing moveset: {}'.format(moveset))
         for index, move in moveset.enumerated():
+            if row >= self.rows or col >= self.cols:
+                bumps += 1
+                continue
+
             if movecells[row, col, 4] == 1:
                 redundancy += 1
+
             movecells[row, col, 4] = 1
+
             if movecells[row, col, move.direction.value] == 0:
                 bumps += 1
             else:
@@ -126,8 +130,9 @@ class Labyrinth():
                     col -= 1
                 elif move.direction == Direction.RIGHT:
                     col += 1
+
         moves = len(moveset) - bumps
-        distance = self.rows - row + self.cols - col
+        distance = self.rows - row + self.cols - col - 2
         return distance, bumps, redundancy, moves
 
     def print_arr(self, open_ends=True):
@@ -223,16 +228,17 @@ class Labyrinth():
         return dup
 
 if __name__ == '__main__':
+    # Just testing stuff
     logging.basicConfig(level=logging.DEBUG)
     np.set_printoptions(threshold=np.nan)
-    lab = Labyrinth(file='lab_test.csv')
-    mvs = Moveset(num_moves=random.randint(lab.num_moves_max//2, lab.num_moves_max))
-    print(lab.process_moveset(mvs))
+    # lab = Labyrinth(file='.csv')
+    # mvs = Moveset(num_moves=random.randint(lab.num_moves_max//2, lab.num_moves_max))
+    # print(lab.process_moveset(mvs))
     # lab.print_movecells()
-    # lab = Labyrinth(random_init=True, rows=5, cols=5)
+    # lab = Labyrinth(random_init=True, rows=2, cols=2)
     # lab.plot_arr()
     # lab.print_arr()
     # lab.print_arr(False)
-    # lab.save_file('lab_test')
+    # lab.save_file('2x2')
     # plt.show()
 
