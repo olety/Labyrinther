@@ -21,6 +21,9 @@ class Move:
     def mutate(self):
         self.direction = Direction(self.direction ^ 1)
 
+    def __str__(self):
+        return self.direction.name
+
     @property
     def name(self):
         return self.direction.name
@@ -55,9 +58,9 @@ class Moveset:
                 moves_to_mutate.remove(chosen)
             self.move_list[chosen].mutate()
             logging.debug('Moveset - Mutated move №{} into {}'.format(chosen, self.move_list[chosen].name))
-        logging.debug('Moveset - New moveset:')
-        if logging.DEBUG:
-            self.print_moves()
+        # logging.debug('Moveset - New moveset:')
+        # if logging.DEBUG:
+        #     self.print_moves()
 
     def enumerated(self):
         return enumerate(self.move_list)
@@ -77,10 +80,10 @@ class Moveset:
         self.move_list = np.array([Move.from_string(string) for string in str_arr])
 
     def print_moves(self):
-        logging.info('Moveset - Printing moveset ({0} moves)'.format(len(self.move_list)))
+        print('Moveset - Printing moveset ({0} moves)'.format(len(self.move_list)))
         for index, move in enumerate(self.move_list):
-            logging.info('\t№{0} - {1}'.format(index, move.direction.name))
-        logging.info('Moveset -  Finished printing moveset')
+            print('\t№{0} - {1}'.format(index, move.direction.name))
+        print('Moveset -  Finished printing moveset')
 
     def __str__(self):
         return ' '.join([move.direction.name for move in self.move_list])
