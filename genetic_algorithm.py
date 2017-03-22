@@ -5,32 +5,41 @@ import math
 from matplotlib import pyplot as plt
 import random
 import logging
+from bokeh.io import gridplot, output_file, save
+from bokeh.plotting import figure
+from bokeh.mpl import to_bokeh
+from bokeh.models import ColumnDataSource, Range1d
 
 
 class GeneticAlgorithm:
     def __init__(self, labyrinth, **kwargs):
+        self.setup = kwargs
         # Setting the variables
-        self.labyrinth = labyrinth
+        if type(labyrinth) is Labyrinth:
+            self.labyrinth = labyrinth
+        else:
+            self.labyrinth = Labyrinth(file_obj=labyrinth)
 
         # Kwargs: General
         self.file_name = kwargs.get('file_name', 'last_run')
-        self.save = kwargs.get('save', True)
+        # self.save = kwargs.get('save', True)
 
         # Kwargs: Algorithm - related
-        self.roulette_mult = kwargs.get('roulette_mult', 1)
-        self.crossover_rate = kwargs.get('crossover_rate', 0.8)
+        # print(kwargs)
+        self.roulette_mult = int(kwargs.get('roulette_mult', 1))
+        self.crossover_rate = float(kwargs.get('crossover_rate', 0.8))
         self.crossover_pts = kwargs.get('crossover_pts', 'random')
-        self.mutation_rate = kwargs.get('mutation_rate', 0.001)
+        self.mutation_rate = float(kwargs.get('mutation_rate', 0.001))
         self.selection = kwargs.get('selection', 'roulette')
-        self.elites_cnt = kwargs.get('elitism_num', 5)
-        self.pop_cnt = kwargs.get('num_population', 100)
-        self.min_moves_mult = kwargs.get('min_moves_mult', 0.5)
-        self.max_moves_mult = kwargs.get('max_moves_mult', 3)
-        self.max_iter = kwargs.get('max_iter', 100)
+        self.elites_cnt = int(kwargs.get('elitism_num', 5))
+        self.pop_cnt = int(kwargs.get('num_population', 100))
+        self.min_moves_mult = float(kwargs.get('min_moves_mult', 0.5))
+        self.max_moves_mult = float(kwargs.get('max_moves_mult', 3))
+        self.max_iter = int(kwargs.get('max_iter', 100))
         self.avg_fitness = []
         if self.crossover_pts == 'random':
             self.crossover_pts = random.randint(1, 3)
-
+        self.crossover_pts = int(self.crossover_pts)
         # Generating the starting population
         self._generate_initial_pop()
 
@@ -74,8 +83,8 @@ class GeneticAlgorithm:
             logging.debug('Starting initial population fitness eval')
             logging.info('Sorting the population')
             self.pop = self.pop[np.flipud(self.pop[:, 1].argsort())]
-            self.pop[:, 1] -= self.pop[:, 1].min() - 1
             self.avg_fitness.append(np.mean(self.pop[:, 1]))
+            self.pop[:, 1] -= self.pop[:, 1].min() - 1
             if self.winner_moveset:
                 indices = np.where(self.pop[:, 0] == self.winner_moveset)
                 self.winner_fitness = self.pop[indices[0], 1]
@@ -111,6 +120,10 @@ class GeneticAlgorithm:
             # Save the values for the history view
             logging.info('Saving the values and moving onto the next gen')
             self.pop = self.next_pop
+
+        self.pop = self.pop[np.flipud(self.pop[:, 1].argsort())]
+        self.pop[:, 1] -= self.pop[:, 1].min() - 1
+        self.avg_fitness.append(np.mean(self.pop[:, 1]))
         return False, gen + 1
 
     def _random_search(self):
@@ -137,9 +150,33 @@ class GeneticAlgorithm:
         elif self.pop:
             self.labyrinth.plot_moveset(self.pop[0, 0])
 
-    def save_data(self):
-        np.save(self.file_name, [self.pop, self.max_gen, self.winner_moveset,
-                                 self.labyrinth, self.selection, self.avg_fitness])
+    @property
+    def best_moveset(self):
+        if self.winner_moveset:
+            return self.winner_moveset
+        else:
+            return self.pop[0, 0]
+
+    def save_data(self, to_html, target_dir='templates/', plot_dir='plots/', **kwargs):
+        if to_html:  # Package's .image_url doesn't work atm :(
+            output_file(target_dir + '{}.html'.format(self.file_name))
+            s1 = figure(width=500, plot_height=500, title='Fitness of the last population')
+            s1.line(np.arange(len(self.pop[:, 1])), self.pop[:, 1])
+            s2 = figure(width=500, height=500, title='Average fitness (before making it positive)')
+            s2.line(np.arange(len(self.avg_fitness)), self.avg_fitness)
+            self.labyrinth.plot_moveset(self.best_moveset, show=False, savefig=True,
+                                        file_name='plots/{}.png'.format(self.file_name))
+            # pic_src = ColumnDataSource(dict(url=[photo_dir+'{}.png'.format(self.file_name)]))
+            s3 = figure(x_range=(0, 1), y_range=(0, 1), title='Labyrinth')
+            s3.image_url(url=[plot_dir + '{}.png'], x=0, y=1, h=0.9, w=0.9)
+            p = gridplot([[s3, s1], [None, s2]])
+            save(p)
+        else:
+            np.save(self.file_name, [self.pop, self.max_gen, self.winner_moveset,
+                                     self.labyrinth, self.selection, self.avg_fitness, self.max_iter, self.setup])
+        if kwargs.get('save_image', False):
+            self.labyrinth.plot_moveset(self.best_moveset, show=False, savefig=True,
+                                        file_name=plot_dir + '/{}.png'.format(self.file_name))
 
     @staticmethod
     def _fitness(distance, bumps, redundancy, moves, length):
@@ -148,14 +185,14 @@ class GeneticAlgorithm:
     @staticmethod
     def plot_fitness_pop(pop):
         f, ax = plt.subplots()
-        ax.plot([range(len(pop))], pop[:, 1])
-        plt.show()
+        ax.plot(np.arange(len(pop[:, 1])), pop[:, 1])
+        plt.show(block=False)
 
     @staticmethod
     def plot_fitness_avg(fit):
         f, ax = plt.subplots()
         ax.plot(np.arange(len(fit)), fit)
-        plt.show()
+        plt.show(block=False)
 
     def analyze(self):
         print('Started analysis:')
@@ -235,11 +272,11 @@ def run(num_tests):
 
     ax_iterations = plt.subplot(212, sharex=ax_gens)
     ax_iterations.set_ylim([math.ceil(min(iterations) - 0.5 * (max(iterations) - min(iterations))),
-                      math.ceil(min(iterations) + 0.5 * (max(iterations) - min(iterations)))])
+                            math.ceil(min(iterations) + 0.5 * (max(iterations) - min(iterations)))])
     plt.bar(np.arange(num_tests), width=0.35, height=iterations, color='y')
 
     # ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
-    plt.show()
+    plt.show(block=False)
 
 
 if __name__ == '__main__':
@@ -247,14 +284,15 @@ if __name__ == '__main__':
     lab = Labyrinth(file='10x10.csv')
     # lab.plot_arr(lab.array_closed)
     print('Starting GA')
-    ga = GeneticAlgorithm(lab)
-    i = 0
-    while not ga.found_winner:
-        ga = GeneticAlgorithm(lab)
-        i += 1
-        print(i)
+    ga = GeneticAlgorithm(lab, file_name='123')
+    ga.save_data(True)
+    # i = 0
+    # while not ga.found_winner:
+    #     ga = GeneticAlgorithm(lab)
+    #     i += 1
+    #     print(i)
     # print(ga.all_pops)
     # print(ga.found_winner)
 
-    ga.analyze()
+    # ga.analyze()
     # run(2)

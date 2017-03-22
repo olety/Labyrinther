@@ -8,14 +8,15 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 import logging
 
-
 class Labyrinth:
-    def __init__(self, rows=5, cols=5, file=None):
+    def __init__(self, rows=5, cols=5, file=None, file_obj=None):
         if (not rows or not cols) and file is None:
             raise Exception('Can\'t make a labyrinth out of nothing')
         logging.debug('Labyrinth - started processing labyrinth')
         logging.debug('Labyrinth - Shape: [{},{}], file={}'
                       .format(rows, cols, file))
+        if file_obj:
+            self._from_file(file_obj)
         if file:
             self._from_file(file)
         else:
@@ -32,6 +33,18 @@ class Labyrinth:
         # Default multiplier is 10 so we have to divide by 10**2
         self.num_moves_max = self.array_closed.shape[0] * self.array_closed.shape[1] / 100
         logging.debug('Labyrinth - num_moves_max = {}'.format(self.num_moves_max))
+
+    def _from_file_obj(self, file):
+        temp_df = pd.read_csv(file, sep='-', header=None, skiprows=1)
+        self.array_closed = temp_df.values
+        # print(self.array_closed)
+        if len(np.unique(self.array_closed)) != 2:
+            logging.error('Labyrinth - file didn\'t match the pattern')
+            raise Exception('Bad input labyrinth file')
+        self.array_open = self.array_closed.copy()
+        self.array_open[1:8, 0] = 0
+        self.array_open[self.rows * 10 - 9:self.rows * 10 - 2, self.cols * 10 - 1] = 0
+        self.movecells = Labyrinth._arr_to_cells(self.array_open, self.rows, self.cols)
 
     def _from_file(self, file):
         with open(file, 'r') as f:
@@ -141,6 +154,8 @@ class Labyrinth:
                    zorder=2, label='start')
         ax.scatter(path_xs[-1], path_ys[-1], color='#c447e0', s=(2000 - self.rows * self.cols * 15), marker='X',
                    alpha=1, zorder=2, label='finish')
+        ax.scatter(self.rows*8+4.5, self.cols*8+4.5, color ='y', s=(1000 - self.rows * self.cols * 15), marker='D',
+                   alpha=1, zorder=2, label='goal')
         for i in range(len(path) - 2, -1, -1):
             p = FancyArrowPatch(posA=[path_xs[i], path_ys[i]], posB=[path_xs[i + 1], path_ys[i + 1]],
                                 connectionstyle='arc3, rad=0.5',
@@ -175,6 +190,8 @@ class Labyrinth:
             plt.show()
         if savefig and file_name:
             f.savefig(file_name, dpi=500)
+        if kwargs.get('export',False):
+            return f,ax
 
     def process_moveset(self, moveset):
         movecells = self.movecells.copy()
