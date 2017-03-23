@@ -1,11 +1,10 @@
 from flask import *
-from genetic_algorithm import GeneticAlgorithm
+from genetic.genetic import GeneticAlgorithm, Labyrinth
+from pathlib import Path
 from multiprocessing import Process
 from bokeh.embed import components
 from bokeh.plotting import figure
 import numpy as np
-import os.path
-from labyrinth import Labyrinth
 
 app = Flask(__name__)
 
@@ -34,7 +33,7 @@ def home():
             min_moves_mult=request.form.get('min_moves_mult'),
             max_moves_mult=request.form.get('max_moves_mult'),
             file_name='{}'.format(i)).save_data(to_html=False, plot_dir='static/plots/',
-                                                save_image=True, save_file_dir='static/arrays/'))
+                                                save_image=True, file_dir='static/arrays/'))
         p1.start()
         return redirect('/{}'.format(i))
 
@@ -44,7 +43,7 @@ def home():
 
 @app.route('/<plot_id>', methods=['GET'])
 def show_plots(plot_id):
-    if os.path.isfile('static/arrays/{}.npy'.format(plot_id)):
+    if Path('static/arrays/{}.npy'.format(plot_id)).is_file():
         pop, max_gen, winner_moveset, labyrinth, selection, avg_fitness, max_iter, setup = np.load(
             '{}.npy'.format(plot_id))
         s1 = figure(width=500, plot_height=500, title='Fitness of the last population')
