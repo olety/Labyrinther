@@ -45,6 +45,8 @@ class GeneticAlgorithm:
         # Generating the starting population
         self._generate_initial_pop()
 
+        # TODO: Move this into a separate start() function?
+
         # Doing selection
         if self.selection == 'roulette':
             self.found_winner, self.max_gen = self._roulette_selection()
