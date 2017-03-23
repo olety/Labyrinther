@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from matplotlib import cm
 import logging
 
+
 class Labyrinth:
     def __init__(self, rows=5, cols=5, file=None, file_obj=None):
         if (not rows or not cols) and file is None:
@@ -16,7 +17,7 @@ class Labyrinth:
         logging.debug('Labyrinth - Shape: [{},{}], file={}'
                       .format(rows, cols, file))
         if file_obj:
-            self._from_file(file_obj)
+            self._from_file_obj(file_obj)
         if file:
             self._from_file(file)
         else:
@@ -35,6 +36,7 @@ class Labyrinth:
         logging.debug('Labyrinth - num_moves_max = {}'.format(self.num_moves_max))
 
     def _from_file_obj(self, file):
+        self.rows, self.cols = (int(x) for x in file.split(' ')[0:1])
         temp_df = pd.read_csv(file, sep='-', header=None, skiprows=1)
         self.array_closed = temp_df.values
         # print(self.array_closed)

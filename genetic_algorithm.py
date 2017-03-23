@@ -14,6 +14,8 @@ from bokeh.models import ColumnDataSource, Range1d
 class GeneticAlgorithm:
     def __init__(self, labyrinth, **kwargs):
         self.setup = kwargs
+        if self.setup['file_name']:
+            self.setup['server_iteration'] = self.setup['file_name']
         # Setting the variables
         if type(labyrinth) is Labyrinth:
             self.labyrinth = labyrinth
@@ -172,8 +174,11 @@ class GeneticAlgorithm:
             p = gridplot([[s3, s1], [None, s2]])
             save(p)
         else:
-            np.save(self.file_name, [self.pop, self.max_gen, self.winner_moveset,
-                                     self.labyrinth, self.selection, self.avg_fitness, self.max_iter, self.setup])
+            print(self.avg_fitness)
+            np.save(kwargs.get('file_dir', '') + self.file_name, [self.pop, self.max_gen, self.best_moveset,
+                                                                  self.labyrinth, self.selection, self.avg_fitness,
+                                                                  self.max_iter, self.setup,
+                                                                  self.found_winner])
         if kwargs.get('save_image', False):
             self.labyrinth.plot_moveset(self.best_moveset, show=False, savefig=True,
                                         file_name=plot_dir + '/{}.png'.format(self.file_name))

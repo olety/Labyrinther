@@ -59,9 +59,9 @@ class Moveset:
                 moves_to_mutate.remove(chosen)
             self.move_list[chosen].mutate()
             # logging.debug('Moveset - Mutated move №{} into {}'.format(chosen, self.move_list[chosen].name))
-        # logging.debug('Moveset - New moveset:')
-        # if logging.DEBUG:
-        #     self.print_moves()
+            # logging.debug('Moveset - New moveset:')
+            # if logging.DEBUG:
+            #     self.print_moves()
 
     def enumerated(self):
         return enumerate(self.move_list)
@@ -100,8 +100,13 @@ class Moveset:
     def move_string(self):
         return ''.join('{0:02b}'.format(move.direction.value) for move in self.move_list)
 
+    @property
+    def move_string_pairs(self):
+        return ['{0:02b}'.format(move.direction.value) for move in self.move_list]
+
     def crossover(self, parent2, num_points):
-        logging.debug('Moveset - Crossover - self len = {}, p2 len = {}, num pts = {}'.format(len(self), len(parent2), num_points))
+        logging.debug('Moveset - Crossover - self len = {}, p2 len = {}, num pts = {}'.format(len(self), len(parent2),
+                                                                                              num_points))
         if num_points < 0 or num_points > len(self):
             raise Exception('Moveset - bad number of points for crossover = {}'.format(num_points))
         child = np.empty(0, dtype=object)
@@ -116,8 +121,8 @@ class Moveset:
         current_parent = 0
         current_point = 0
         for point in crossover_points:
-            child = np.concatenate([child, parents[current_parent][current_point:point+1]])
-            current_point = point+1
+            child = np.concatenate([child, parents[current_parent][current_point:point + 1]])
+            current_point = point + 1
             current_parent ^= 1
         child = np.concatenate([child, parents[current_parent][current_point:]])
         if fill_pts:
@@ -137,4 +142,3 @@ if __name__ == '__main__':
     print([item.name for item in rand_mvs.move_list])
     print(rand_mvs.move_string)
     # rand_mvs.mutate()
-

@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Labyrinther</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><!-- Latest compiled and minified CSS -->
+    <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
           integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
@@ -19,7 +19,7 @@
 <div class="container">
     <h1>Labyrinther</h1>
     <br>
-    <form role="form" method="post">
+    <form class="form" role="form" method="post">
         <div class="form-group">
             <label for="lab">Labyrinth file</label>
             <input id="lab" type="file" name="labyrinth" accept=".csv">
@@ -62,9 +62,8 @@
             <label for="max_mm">Maximal number of moves multiplier</label>
             <input id="max_mm" type="number" class="form-control" value="2" name="max_moves_mult"
                    placeholder="Enter the maximal #moves multiplier" required>
-
         </div>
-        <button type="submit" class="btn btn-primary">Calculate!</button>
+        <button type="submit" class="btn btn-primary btn-block">Calculate!</button>
     </form>
     <br>
     <div id="results"></div>
