@@ -1,4 +1,4 @@
-from moveset import Direction, Moveset
+from .moveset import Direction, Moveset
 import random
 import math
 import numpy as np

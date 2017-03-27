@@ -1,5 +1,5 @@
-from labyrinth import Labyrinth
-from moveset import Moveset
+from .labyrinth import Labyrinth
+from .moveset import Moveset
 import numpy as np
 import math
 from matplotlib import pyplot as plt
@@ -88,11 +88,11 @@ class GeneticAlgorithm:
             logging.info('Sorting the population')
             self.pop = self.pop[np.flipud(self.pop[:, 1].argsort())]
             self.avg_fitness.append(np.mean(self.pop[:, 1]))
-            self.pop[:, 1] -= self.pop[:, 1].min() - 1
             if self.winner_moveset:
                 indices = np.where(self.pop[:, 0] == self.winner_moveset)
                 self.winner_fitness = self.pop[indices[0], 1]
                 return True, gen
+            self.pop[:, 1] -= self.pop[:, 1].min() - 1
             fitness_sum = self.pop[:, 1].sum()
             # Determine best ones - Make the roulette
             logging.info('Filling in the roulette')
