@@ -17,56 +17,59 @@
 </head>
 <body>
 <div class="container">
-    <h1>Labyrinther</h1>
-    <br>
-    <form class="form" role="form" method="post">
-        <div class="form-group">
-            <label for="lab">Labyrinth file</label>
-            <input id="lab" type="file" name="labyrinth" accept=".csv">
-            <label for="pop">Population number</label>
-            <input id="pop" type="number" value="100" class="form-control" name="pop"
-                   placeholder="Enter a number of people"
-                   required>
-            <label for="iters">Number of iterations</label>
-            <input id="iters" type="number" value="100" class="form-control" name="iters"
-                   placeholder="Enter a number of iterations" required>
-            <label for="crs_rate">Crossover rate</label>
-            <input id="crs_rate" type="number" value="0.8" class="form-control" name="crossover_rate"
-                   placeholder="Enter crossover_rate" required>
-            <label for="crs_pts">Crossover points</label>
-            <br>
-            <select id="crs_pts" name="crossover_pts">
-                <option value="1">One crossover point</option>
-                <option value="2">Two crossover points</option>
-                <option value="3">Three crossover points</option>
-                <option value="random">Random</option>
-            </select>
-            <br>
-            <label for="mut">Number of mutations</label>
-            <input id="mut" type="number" value="0.001" class="form-control" name="mutation_rate"
-                   placeholder="Enter mutation rate" required>
-            <label for="sel">Selection type</label>
-            <br>
-            <select id="sel" name="selection">
-                <option value="roulette">Roulette selection</option>
-                <option value="random">Random List selection</option>
-            </select>
-            <br>
-            <label for="elite">Elitism number</label>
-            <input id="elite" type="number" class="form-control" value="2" name="elites"
-                   placeholder="Enter elitism number"
-                   required>
-            <label for="min_mm">Minimal number of moves multiplier</label>
-            <input id="min_mm" type="number" class="form-control" value="0.5" name="min_moves_mult"
-                   placeholder="Enter the minimal #moves multiplier" required>
-            <label for="max_mm">Maximal number of moves multiplier</label>
-            <input id="max_mm" type="number" class="form-control" value="2" name="max_moves_mult"
-                   placeholder="Enter the maximal #moves multiplier" required>
-        </div>
-        <button type="submit" class="btn btn-primary btn-block">Calculate!</button>
-    </form>
-    <br>
-    <div id="results"></div>
+    <div class="row">
+        <h1>Labyrinther</h1>
+    </div>
+    <div class="row">
+        <form class="form" role="form" method="post">
+            <div class="form-group">
+                <label for="lab">Labyrinth file</label>
+                <input id="lab" type="file" name="labyrinth" accept=".csv">
+                <label for="pop">Population number</label>
+                <input id="pop" type="number" value="100" class="form-control" name="pop"
+                       placeholder="Enter a number of people"
+                       required>
+                <label for="iters">Number of iterations</label>
+                <input id="iters" type="number" value="100" class="form-control" name="iters"
+                       placeholder="Enter a number of iterations" required>
+                <label for="crs_rate">Crossover rate</label>
+                <input id="crs_rate" type="number" value="0.8" class="form-control" name="crossover_rate"
+                       placeholder="Enter crossover_rate" required>
+                <label for="crs_pts">Crossover points</label>
+                <br>
+                <select id="crs_pts" name="crossover_pts">
+                    <option value="1">One crossover point</option>
+                    <option value="2">Two crossover points</option>
+                    <option value="3">Three crossover points</option>
+                    <option value="random">Random</option>
+                </select>
+                <br>
+                <label for="mut">Number of mutations</label>
+                <input id="mut" type="number" value="0.001" class="form-control" name="mutation_rate"
+                       placeholder="Enter mutation rate" required>
+                <label for="sel">Selection type</label>
+                <br>
+                <select id="sel" name="selection">
+                    <option value="roulette">Roulette selection</option>
+                    <option value="random">Random List selection</option>
+                </select>
+                <br>
+                <label for="elite">Elitism number</label>
+                <input id="elite" type="number" class="form-control" value="2" name="elites"
+                       placeholder="Enter elitism number"
+                       required>
+                <label for="min_mm">Minimal number of moves multiplier</label>
+                <input id="min_mm" type="number" class="form-control" value="0.5" name="min_moves_mult"
+                       placeholder="Enter the minimal #moves multiplier" required>
+                <label for="max_mm">Maximal number of moves multiplier</label>
+                <input id="max_mm" type="number" class="form-control" value="2" name="max_moves_mult"
+                       placeholder="Enter the maximal #moves multiplier" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Calculate!</button>
+        </form>
+        <br>
+        <div id="results"></div>
+    </div>
 </div>
 <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
 <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>

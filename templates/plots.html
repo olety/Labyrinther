@@ -65,55 +65,45 @@
     </div>
 
     <div class="row">
-        <div class="col-md-6"><p>
-            {{ div|safe }}
-        </p>
+        <div class="col-md-6">
+            <p>
+                {{ div|safe }}
+            </p>
         </div>
-        <div class="col-md-6"><p>
-            {{ div2|safe }}
-        </p>
+        <div class="col-md-6">
+            <p>
+                {{ div2|safe }}
+            </p>
         </div>
     </div>
     <div class="row">
-        <div class="table-responsive">
-            <table class="table table-bordered">
-                <tr>
-                    {% for name in plot_urls['names'] %}
-                    <th class="text-center">
-                        {{name}}
-                    </th>
-                    {% endfor %}
-                </tr>
-                <tr>
-                    {% for link in plot_urls['links'] %}
-                    <td>
-                        <img src="{{link}}" height="270" width="360">
-                    </td>
-                    {% endfor %}
-                </tr>
-            </table>
+        <div class="col-md-12">
+            <p>
+                <img src="{{ result_moveset }}" height="800" width="1000">
+            </p>
         </div>
     </div>
 
-    <div class="row">
-        <h2>Best moveset</h2>
+
+<div class="row">
+    <h2>Best moveset</h2>
+</div>
+<div class="row">
+    <div class="table-responsive">
+        <table class="table table-striped table-condensed table-bordered">
+            <tr>
+                <th>Names</th>
+                <th>Bits</th>
+            </tr>
+            {% for word, bits in winner_moveset %}
+            <tr>
+                <th>{{word}}</th>
+                <td>{{bits}}</td>
+            </tr>
+            {% endfor %}
+        </table>
     </div>
-    <div class="row">
-        <div class="table-responsive">
-            <table class="table table-striped table-condensed table-bordered">
-                <tr>
-                    <th>Names</th>
-                    <th>Bits</th>
-                </tr>
-                {% for word, bits in winner_moveset %}
-                <tr>
-                    <th>{{word}}</th>
-                    <td>{{bits}}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-    </div>
+</div>
 </div>
 {{ script|safe }}
 {{ script2|safe }}

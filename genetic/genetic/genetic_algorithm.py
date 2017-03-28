@@ -166,11 +166,16 @@ else:
         def _random_search(self):
             found = False
             i = 0
-            while not found or i > 100000:
+            self.max_iter = min(self.max_iter, 100000)
+            while not found or i > self.max_iter:
                 mvs = self._generate_random_moveset()
-                if self.labyrinth.process_moveset(mvs)[0] == 0:
+                distance, bumps, redundancy, moves = self.labyrinth.process_moveset(mvs)
+                if distance == 0:
+                    self.max_gen = i
+                    self.winner_moveset = mvs
                     found = True
                 else:
+                    self.avg_fitness.append(self._fitness(distance, bumps, redundancy, moves, len(mvs)))
                     i += 1
             return found, i
 

@@ -1,11 +1,11 @@
 import os
 from flask import *
 from genetic.genetic import GeneticAlgorithm, Labyrinth
-from multiprocessing import Process
 import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 
+executor = ThreadPoolExecutor(1)
 app = Flask(__name__)
-
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -20,7 +20,7 @@ def home():
             f.seek(0)
             f.write(str(i))
             f.truncate()
-        p1 = Process(target=GeneticAlgorithm(
+        executor.submit(GeneticAlgorithm(
             labyrinth=Labyrinth(file_obj=request.files.get(request.form.get('labyrinth'))),
             num_population=request.form.get('pop'),
             max_iter=request.form.get('iters'),
@@ -33,11 +33,8 @@ def home():
             max_moves_mult=request.form.get('max_moves_mult')).save_data(
             file_dir=os.path.join(app.static_folder, str(i)),
             pic_last_plot=True,
-            gif_full_plot=True,
-            gif_last_plot=True,
             dyn_avg_fit=True,
             dyn_last_fit=True))
-        p1.start()
         return redirect('/{}'.format(i))
     else:
         return render_template('index.html')
@@ -54,16 +51,16 @@ def show_plots(report_id):
         except FileNotFoundError as e:
             print(e)
         # Change this to load from file if it gets too big
-        plot_table_conf = {'Last moveset (pic)': 'last.png',
-                           'Full algorithm (gif)': 'full.gif',
-                           'Last moveset (gif)': 'last.gif'}
-        plot_urls = dict()
-        plot_urls['names'] = [name for name, filename in plot_table_conf.items()]
-        plot_urls['links'] = [url_for('static', filename='{}/{}'.format(report_id, filename))
-                              for name, filename in plot_table_conf.items()]
+        # plot_table_conf = {'Last moveset (pic)': 'last.png',
+        #                    'Full algorithm (gif)': 'full.gif',
+        #                    'Last moveset (gif)': 'last.gif'}
+        # plot_urls = dict()
+        # plot_urls['names'] = [name for name, filename in plot_table_conf.items()]
+        # plot_urls['links'] = [url_for('static', filename='{}/{}'.format(report_id, filename))
+        #                       for name, filename in plot_table_conf.items()]
         return render_template('plots.html'.format(report_id), script=script1,
                                div=div2, script2=script2, div2=div1,
-                               plot_urls=plot_urls,
+                               result_moveset=url_for('static', filename='{}/last.png'.format(report_id)),
                                id=report_id, setup=setup, num_tries=max_gen, num_tries_max=max_iter,
                                found_winner=found_winner,
                                winner_moveset=zip(str(best_moveset).split(' '),
@@ -73,4 +70,4 @@ def show_plots(report_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(threaded=True)

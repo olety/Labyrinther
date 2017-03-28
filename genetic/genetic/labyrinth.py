@@ -147,16 +147,6 @@ class Labyrinth:
             return path, bumps
         return self._plot_moveset(path=path, bumps=bumps, show=show, savefig=savefig, file_name=file_name, **kwargs)
 
-    @staticmethod
-    def _transform_array_into_xy(arr):
-        # Array format: [(y1, x1), ...]
-        return [p[1] for p in arr], [p[0] for p in arr]
-
-    @staticmethod
-    def _transform_array_into_xy_stack(arr):
-        # Array format: [(y1, x1), ...]
-        return np.hstack([p[1] for p in arr], [p[0] for p in arr])
-
     def _plot_moveset(self, path, bumps, **kwargs):
         if kwargs.get('omit_figures', False) and kwargs.get('ax', None):
             ax = kwargs['ax']
@@ -167,7 +157,7 @@ class Labyrinth:
         path_xs, path_ys = Labyrinth._transform_array_into_xy(path)
         bumps_xs, bumps_ys = Labyrinth._transform_array_into_xy(bumps)
         # Plotting
-        if kwargs.get('plot', False):
+        if kwargs.get('plot', True):
             plots = list()
             plots.append(ax.scatter(bumps_xs, bumps_ys, color='#ff0000', s=(1800 - self.rows * self.cols * 12), alpha=0.1,
                                     marker='^',
@@ -191,13 +181,16 @@ class Labyrinth:
                                     edgecolor='#5f5d63',
                                     facecolor='#42c8f4',
                                     zorder=2 + i)
+                plots.append(ax.scatter(path_xs[i + 1], path_ys[i + 1], zorder=2 + i, color='#42c8f4'))
                 ax.add_artist(p)
                 plots.append(p)
-            plots.append(ax.scatter(path_xs[i + 1], path_ys[i + 1], zorder=2 + i, color='#42c8f4'))
+
+
             plt.axis('off')
             plt.title('Moveset')
             plt.title('{}x{}'.format(self.rows, self.cols), loc='right')
             plt.title(kwargs.get('left_title', ''), loc='left')
+
         return_dict = dict()
         if kwargs.get('show', False):
             plt.show()
@@ -211,6 +204,7 @@ class Labyrinth:
         return return_dict
 
     def plot_anim(self, movesets, **kwargs):
+        pass
         # DOESNT WORK SINE THE LENGTH OF A MOVESET IS VARIABLE
         # setup = self.plot_moveset(movesets[0], show=False, export=True, export_plots=True, plot=True)
         # fig = setup['fig']
@@ -328,6 +322,16 @@ class Labyrinth:
     def __str__(self):
         return '{}x{} Labyrinth. {}x multiplier is used in a file representation. num_moves_max = {}' \
             .format(self.rows, self.cols, 10, self.num_moves_max)
+
+    @staticmethod
+    def _transform_array_into_xy(arr):
+        # Array format: [(y1, x1), ...]
+        return [p[1] for p in arr], [p[0] for p in arr]
+
+    @staticmethod
+    def _transform_array_into_xy_stack(arr):
+        # Array format: [(y1, x1), ...]
+        return np.hstack([p[1] for p in arr], [p[0] for p in arr])
 
     @staticmethod
     def _cells_to_arr(movecells, open_endpoints=False, multiplier=10, line_thickness_hor=1, line_thickness_ver=1):
