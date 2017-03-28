@@ -1,9 +1,7 @@
+import os
 from flask import *
 from genetic.genetic import GeneticAlgorithm, Labyrinth
-from pathlib import Path
 from multiprocessing import Process
-from bokeh.embed import components
-from bokeh.plotting import figure
 import numpy as np
 
 app = Flask(__name__)
@@ -32,37 +30,42 @@ def home():
             selection=request.form.get('selection'),
             elitism_num=request.form.get('elites'),
             min_moves_mult=request.form.get('min_moves_mult'),
-            max_moves_mult=request.form.get('max_moves_mult'),
-            file_name='{}'.format(i)).save_data(to_html=False, plot_dir='static/plots/',
-                                                save_image=True, file_dir='static/arrays/'))
+            max_moves_mult=request.form.get('max_moves_mult')).save_data(
+            file_dir=os.path.join(app.static_folder, str(i)),
+            pic_last_plot=True,
+            gif_full_plot=True,
+            gif_last_plot=True,
+            dyn_avg_fit=True,
+            dyn_last_fit=True))
         p1.start()
         return redirect('/{}'.format(i))
     else:
         return render_template('index.html')
 
 
-@app.route('/<plot_id>', methods=['GET'])
-def show_plots(plot_id):
-    if Path('static/arrays/{}.npy'.format(plot_id)).is_file():
-        pop, max_gen, winner_moveset, labyrinth, selection, avg_fitness, max_iter, setup, found_winner = np.load(
-            'static/arrays/{}.npy'.format(plot_id))
+@app.route('/<report_id>', methods=['GET'])
+def show_plots(report_id):
+    if os.path.isfile(os.path.join(app.static_folder, '{}'.format(report_id), 'arr.npy')):
+        max_gen, max_iter, best_moveset, selection, avg_fitness, setup, found_winner \
+            = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'arr.npy'))
 
-        # Last pop fitness plot
-        s1 = figure(width=500, plot_height=500, title='Fitness of the last population (before adjusting)')
-        s1.line(np.arange(len(pop[:, 1])), pop[:, 1])
-        script1, div1 = components(s1)
-
-        # Average fitness plot
-        s2 = figure(width=500, height=500, title='Average fitness (before adjusting)')
-        s2.line(np.arange(len(avg_fitness)), avg_fitness)
-        script2, div2 = components(s2)
-
-        return render_template('plots.html'.format(plot_id), script=script1,
+        script1, div1 = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'dyn_last_fit.npy'))
+        script2, div2 = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'dyn_avg_fit.npy'))
+        # Change this to load from file if it gets too big
+        plot_table_conf = {'Last moveset (pic)': 'last.png',
+                           'Full algorithm (gif)': 'full.gif',
+                           'Last moveset (gif)': 'last.gif'}
+        plot_urls = dict()
+        plot_urls['names'] = [name for name, filename in plot_table_conf.items()]
+        plot_urls['links'] = [url_for('static', filename='{}/{}'.format(report_id, filename))
+                              for name, filename in plot_table_conf.items()]
+        return render_template('plots.html'.format(report_id), script=script1,
                                div=div2, script2=script2, div2=div1,
-                               plot_url=url_for('static', filename='plots/{}.png'.format(plot_id)), id=plot_id,
-                               setup=setup,
-                               winner_moveset=zip(str(winner_moveset).split(' '),
-                                                  winner_moveset.move_string_pairs))
+                               plot_urls=plot_urls,
+                               id=report_id, setup=setup, num_tries=max_gen, num_tries_max=max_iter,
+                               found_winner=found_winner,
+                               winner_moveset=zip(str(best_moveset).split(' '),
+                                                  best_moveset.move_string_pairs))
     else:
         return render_template_string('Wait for the process to finish')
 

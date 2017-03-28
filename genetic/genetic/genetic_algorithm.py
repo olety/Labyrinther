@@ -1,3 +1,5 @@
+from bokeh.embed import components
+
 from .labyrinth import Labyrinth
 from .moveset import Moveset
 import numpy as np
@@ -5,17 +7,13 @@ import math
 from matplotlib import pyplot as plt
 import random
 import logging
-from bokeh.io import gridplot, output_file, save
+import os
 from bokeh.plotting import figure
-from bokeh.mpl import to_bokeh
-from bokeh.models import ColumnDataSource, Range1d
 
 
 class GeneticAlgorithm:
     def __init__(self, labyrinth, **kwargs):
         self.setup = kwargs
-        if self.setup['file_name']:
-            self.setup['server_iteration'] = self.setup['file_name']
         # Setting the variables
         if type(labyrinth) is Labyrinth:
             self.labyrinth = labyrinth
@@ -148,11 +146,12 @@ class GeneticAlgorithm:
         else:
             print('This algorithm didn\'t find a winner yet :(')
 
-    def plot_best(self):
-        if self.found_winner:
-            self.labyrinth.plot_moveset(self.winner_moveset)  # , savefig=True, file_name='labyrinth.png')
-        elif self.pop:
-            self.labyrinth.plot_moveset(self.pop[0, 0])
+    def plot_best(self, **kwargs):
+        # if self.found_winner:
+        #     self.labyrinth.plot_moveset(self.winner_moveset)  # , savefig=True, file_name='labyrinth.png')
+        # elif self.pop:
+        #     self.labyrinth.plot_moveset(self.pop[0, 0])
+        self.labyrinth.plot_moveset(self.best_moveset, **kwargs)
 
     @property
     def best_moveset(self):
@@ -161,29 +160,55 @@ class GeneticAlgorithm:
         else:
             return self.pop[0, 0]
 
-    def save_data(self, to_html, target_dir='templates/', plot_dir='plots/', **kwargs):
-        if to_html:  # Package's .image_url doesn't work atm :(
-            output_file(target_dir + '{}.html'.format(self.file_name))
-            s1 = figure(width=500, plot_height=500, title='Fitness of the last population')
-            s1.line(np.arange(len(self.pop[:, 1])), self.pop[:, 1])
-            s2 = figure(width=500, height=500, title='Average fitness (before making it positive)')
-            s2.line(np.arange(len(self.avg_fitness)), self.avg_fitness)
-            self.labyrinth.plot_moveset(self.best_moveset, show=False, savefig=True,
-                                        file_name='plots/{}.png'.format(self.file_name))
-            # pic_src = ColumnDataSource(dict(url=[photo_dir+'{}.png'.format(self.file_name)]))
-            s3 = figure(x_range=(0, 1), y_range=(0, 1), title='Labyrinth')
-            s3.image_url(url=[plot_dir + '{}.png'], x=0, y=1, h=0.9, w=0.9)
-            p = gridplot([[s3, s1], [None, s2]])
-            save(p)
-        else:
-            print(self.avg_fitness)
-            np.save(kwargs.get('file_dir', '') + self.file_name, [self.pop, self.max_gen, self.best_moveset,
-                                                                  self.labyrinth, self.selection, self.avg_fitness,
-                                                                  self.max_iter, self.setup,
-                                                                  self.found_winner])
-        if kwargs.get('save_image', False):
-            self.labyrinth.plot_moveset(self.best_moveset, show=False, savefig=True,
-                                        file_name=plot_dir + '/{}.png'.format(self.file_name))
+    def save_data(self, **kwargs):
+        # if to_html:  # Package's .image_url doesn't work atm :(
+        #     output_file(target_dir + '{}.html'.format(self.file_name))
+        #     s1 = figure(width=500, plot_height=500, title='Fitness of the last population')
+        #     s1.line(np.arange(len(self.pop[:, 1])), self.pop[:, 1])
+        #
+        #     s2 = figure(width=500, height=500, title='Average fitness (before making it positive)')
+        #     s2.line(np.arange(len(self.avg_fitness)), self.avg_fitness)
+        #
+        #     self.plot_best(show=False, savefig=True, file_name='plots/{}.png'.format(self.file_name))
+        #     # pic_src = ColumnDataSource(dict(url=[photo_dir+'{}.png'.format(self.file_name)]))
+        #
+        #     s3 = figure(x_range=(0, 1), y_range=(0, 1), title='Labyrinth')
+        #     s3.image_url(url=[plot_dir + '{}.png'], x=0, y=1, h=0.9, w=0.9)
+        #     p = gridplot([[s3, s1], [None, s2]])
+        #     save(p)
+        # else:
+
+        # static/1/arr
+        # static/1/plots
+        arr_path = os.path.join(kwargs.get('file_dir', ''), kwargs.get('arr_dir', ''))
+        os.makedirs(arr_path, exist_ok=True)
+        np.save(os.path.join(arr_path, 'arr.npy'),
+                [self.max_gen, self.max_iter, self.best_moveset, self.selection, self.avg_fitness,
+                 self.setup, self.found_winner])
+
+        plot_dir = os.path.join(kwargs.get('file_dir', ''), kwargs.get('plot_dir', ''))
+        os.makedirs(plot_dir, exist_ok=True)
+        if kwargs.get('pic_last_plot', False):  # Picture of the best individual in the last pop
+            self.plot_best(show=False, savefig=True, file_name=os.path.join(plot_dir, 'last.png'))
+        if kwargs.get('gif_full_plot', False):  # step by step progression of the GA
+            self.plot_gif(file_name=os.path.join(plot_dir, 'full.gif'))
+        if kwargs.get('gif_last_plot', False):  # step by step vis. of the best individual in the last pop
+            self.plot_gif(file_name=os.path.join(plot_dir, 'last.gif'))
+
+        if kwargs.get('dyn_last_fit'):  # Last pop fitness plot
+            fig = figure(width=450, plot_height=450,
+                         title='Fitness of the last population (before adjusting)', responsive=True)
+            fig.line(np.arange(len(self.pop[:, 1])), self.pop[:, 1])
+            np.save(os.path.join(plot_dir, 'dyn_last_fit'), components(fig))
+
+        if kwargs.get('dyn_avg_fit'):  # Average fitness plot
+            fig = figure(width=450, height=450, title='Average fitness (before adjusting)', responsive=True)
+            fig.line(np.arange(len(self.avg_fitness)), self.avg_fitness)
+            np.save(os.path.join(plot_dir, 'dyn_avg_fit'), components(fig))
+
+    def plot_gif(self, **kwargs):
+        # TODO: implement
+        pass
 
     @staticmethod
     def _fitness(distance, bumps, redundancy, moves, length):
@@ -205,7 +230,7 @@ class GeneticAlgorithm:
         print('Started analysis:')
         print('Num generations = {}'.format(self.max_gen))
         if self.winner_moveset:
-            self.labyrinth.plot_moveset(self.winner_moveset)
+            self.plot_best()
         if self.pop.all():
             GeneticAlgorithm.plot_fitness_pop(self.pop)
         if self.avg_fitness:
@@ -221,7 +246,7 @@ class GeneticAlgorithm:
         fitness_avg = saved[4]
         print('Num generations = {}'.format(num_gen))
         labyrinth.plot_moveset(winner_moveset)
-        GeneticAlgorithm.plot_fitness(pop)
+        GeneticAlgorithm.plot_fitness_pop(pop)
         GeneticAlgorithm.plot_fitness_avg(fitness_avg)
 
 
@@ -257,6 +282,7 @@ def run(num_tests):
     # for i, pop in enumerate(fitness[:, :, 1]):
     #     plt.subplot()
     #     ax[0][i].plot(pop[:, 1])
+
     ax_gens = plt.subplot(211)
     ax_gens.set_ylim([math.ceil(min(gens) - 0.5 * (max(gens) - min(gens))),
                       math.ceil(min(gens) + 0.5 * (max(gens) - min(gens)))])
