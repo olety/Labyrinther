@@ -45,12 +45,14 @@ def home():
 
 @app.route('/<report_id>', methods=['GET'])
 def show_plots(report_id):
-    if os.path.isfile(os.path.join(app.static_folder, '{}'.format(report_id), 'arr.npy')):
-        max_gen, max_iter, best_moveset, selection, avg_fitness, setup, found_winner \
-            = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'arr.npy'))
-
-        script1, div1 = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'dyn_last_fit.npy'))
-        script2, div2 = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'dyn_avg_fit.npy'))
+    arr_path = os.path.join(app.static_folder, '{}'.format(report_id), 'arr.npy')
+    if os.path.isfile(arr_path):
+        max_gen, max_iter, best_moveset, selection, avg_fitness, setup, found_winner = np.load(arr_path)
+        try:
+            script1, div1 = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'dyn_last_fit.npy'))
+            script2, div2 = np.load(os.path.join(app.static_folder, '{}'.format(report_id), 'dyn_avg_fit.npy'))
+        except FileNotFoundError as e:
+            print(e)
         # Change this to load from file if it gets too big
         plot_table_conf = {'Last moveset (pic)': 'last.png',
                            'Full algorithm (gif)': 'full.gif',

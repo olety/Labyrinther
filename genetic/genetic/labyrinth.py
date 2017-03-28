@@ -4,6 +4,7 @@ import math
 import numpy as np
 import pandas as pd
 from matplotlib.patches import FancyArrowPatch
+from matplotlib import animation
 from matplotlib import pyplot as plt
 from matplotlib import cm
 import logging
@@ -119,7 +120,6 @@ class Labyrinth:
                 .to_csv(f, sep='-', header=False, index=False)
 
     def plot_moveset(self, moveset, show=True, savefig=False, file_name='', **kwargs):
-        left_title = kwargs.get('left_title', '')
         movecells = self.movecells.copy()
         path = [[4.5, 4.5]]
         bumps = []
@@ -130,7 +130,7 @@ class Labyrinth:
             if row >= self.rows or col >= self.cols:
                 continue
             if movecells[row, col, move.direction.value] == 1:
-                print('Going {}'.format(move.direction.name))
+                # print('Going {}'.format(move.direction.name))
                 if move.direction == Direction.TOP:
                     row -= 1
                 elif move.direction == Direction.BOTTOM:
@@ -143,57 +143,96 @@ class Labyrinth:
             else:
                 bumps.append([row * 10 + 4.5, col * 10 + 4.5])
 
-        f, ax = plt.subplots()
-        ax.imshow(self.array_closed, cmap=cm.Greys, origin='upper', zorder=0)
-        path_xs = [p[1] for p in path]
-        path_ys = [p[0] for p in path]
-        bumps_xs = [b[1] for b in bumps]
-        bumps_ys = [b[0] for b in bumps]
+        if kwargs.get('export_data', False):
+            return path, bumps
+        return self._plot_moveset(path=path, bumps=bumps, show=show, savefig=savefig, file_name=file_name, **kwargs)
+
+    @staticmethod
+    def _transform_array_into_xy(arr):
+        # Array format: [(y1, x1), ...]
+        return [p[1] for p in arr], [p[0] for p in arr]
+
+    @staticmethod
+    def _transform_array_into_xy_stack(arr):
+        # Array format: [(y1, x1), ...]
+        return np.hstack([p[1] for p in arr], [p[0] for p in arr])
+
+    def _plot_moveset(self, path, bumps, **kwargs):
+        if kwargs.get('omit_figures', False) and kwargs.get('ax', None):
+            ax = kwargs['ax']
+        else:
+            f, ax = plt.subplots()
+            ax.imshow(self.array_closed, cmap=cm.Greys, origin='upper', zorder=0)
+
+        path_xs, path_ys = Labyrinth._transform_array_into_xy(path)
+        bumps_xs, bumps_ys = Labyrinth._transform_array_into_xy(bumps)
         # Plotting
-        ax.scatter(bumps_xs, bumps_ys, color='#ff0000', s=(1800 - self.rows * self.cols * 12), alpha=0.1, marker='^',
-                   zorder=1)
-        ax.scatter(path_xs[0], path_ys[0], color='#ff6a00', s=(2000 - self.rows * self.cols * 15), marker='o', alpha=1,
-                   zorder=2, label='start')
-        ax.scatter(path_xs[-1], path_ys[-1], color='#c447e0', s=(2000 - self.rows * self.cols * 15), marker='X',
-                   alpha=1, zorder=2, label='finish')
-        ax.scatter(self.rows*8+4.5, self.cols*8+4.5, color ='y', s=(1000 - self.rows * self.cols * 15), marker='D',
-                   alpha=1, zorder=2, label='goal')
-        for i in range(len(path) - 2, -1, -1):
-            p = FancyArrowPatch(posA=[path_xs[i], path_ys[i]], posB=[path_xs[i + 1], path_ys[i + 1]],
-                                connectionstyle='arc3, rad=0.5',
-                                arrowstyle='simple, head_width={}, head_length={}'
-                                .format(30 - (self.rows + self.cols), 25 - (self.rows + self.cols)),
-                                edgecolor='#5f5d63',
-                                facecolor='#42c8f4',
-                                zorder=2 + i)
-            ax.add_artist(p)
-            ax.scatter(path_xs[i + 1], path_ys[i + 1], zorder=2 + i, color='#42c8f4')
-        plt.axis('off')
-        plt.title('Labyrinth')
-        plt.title('{}x{}'.format(self.rows, self.cols), loc='right')
-        if left_title:
-            plt.title(left_title, loc='left')
+        if kwargs.get('plot', False):
+            plots = list()
+            plots.append(ax.scatter(bumps_xs, bumps_ys, color='#ff0000', s=(1800 - self.rows * self.cols * 12), alpha=0.1,
+                                    marker='^',
+                                    zorder=1))
+            plots.append(
+                ax.scatter(path_xs[0], path_ys[0], color='#ff6a00', s=(2000 - self.rows * self.cols * 15), marker='o',
+                           alpha=1, zorder=2, label='start'))
+            plots.append(
+                ax.scatter(path_xs[-1], path_ys[-1], color='#c447e0', s=(2000 - self.rows * self.cols * 15), marker='X',
+                           alpha=1, zorder=2, label='finish'))
+            # Marking the goal
+            ax.scatter(self.rows * 8 + 4.5, self.cols * 8 + 4.5, color='y', s=(1000 - self.rows * self.cols * 15),
+                           marker='D',
+                           alpha=1, zorder=2, label='goal')
 
-        # # Now add the legend with some customizations.
-        # legend = ax.legend(loc='center left', shadow=True)
-        #
-        # # The frame is matplotlib.patches.Rectangle instance surrounding the legend.
-        # frame = legend.get_frame()
-        # frame.set_facecolor('0.90')
-        #
-        # # Set the fontsize
-        # for label in legend.get_texts():
-        #     label.set_fontsize('large')
-        #
-        # for label in legend.get_lines():
-        #     label.set_linewidth(1.5)  # the legend line width
-
-        if show:
+            for i in range(len(path) - 2, -1, -1):
+                p = FancyArrowPatch(posA=[path_xs[i], path_ys[i]], posB=[path_xs[i + 1], path_ys[i + 1]],
+                                    connectionstyle='arc3, rad=0.5',
+                                    arrowstyle='simple, head_width={}, head_length={}'
+                                    .format(30 - (self.rows + self.cols), 25 - (self.rows + self.cols)),
+                                    edgecolor='#5f5d63',
+                                    facecolor='#42c8f4',
+                                    zorder=2 + i)
+                ax.add_artist(p)
+                plots.append(p)
+            plots.append(ax.scatter(path_xs[i + 1], path_ys[i + 1], zorder=2 + i, color='#42c8f4'))
+            plt.axis('off')
+            plt.title('Moveset')
+            plt.title('{}x{}'.format(self.rows, self.cols), loc='right')
+            plt.title(kwargs.get('left_title', ''), loc='left')
+        return_dict = dict()
+        if kwargs.get('show', False):
             plt.show()
-        if savefig and file_name:
-            f.savefig(file_name, dpi=500)
-        if kwargs.get('export',False):
-            return f,ax
+        if kwargs.get('savefig', False) and kwargs.get('file_name', ''):
+            f.savefig(kwargs['file_name'], dpi=500)
+        if kwargs.get('export', False):
+            return_dict['fig'] = f
+            return_dict['ax'] = ax
+        if kwargs.get('export_plots', False):
+            return_dict['plots'] = plots
+        return return_dict
+
+    def plot_anim(self, movesets, **kwargs):
+        # DOESNT WORK SINE THE LENGTH OF A MOVESET IS VARIABLE
+        # setup = self.plot_moveset(movesets[0], show=False, export=True, export_plots=True, plot=True)
+        # fig = setup['fig']
+        # ax = setup['ax']
+        # plots = setup['plots']
+        #
+        # def update(i):
+        #     label = 'Generation {}'.format(i)
+        #     path, bumps = self.plot_moveset(movesets[i], export_data=True)
+        #     path_xs, path_ys = Labyrinth._transform_array_into_xy(path)
+        #     bumps_xs, bumps_ys = Labyrinth._transform_array_into_xy(bumps)
+        #     # plots[0].set_offsets(bumps_xs, bumps_ys)
+        #     # plots[1].set_offsets(path[0])
+        #     # plots[2].set_offsets((path_xs[-1], path_ys[-1]))
+        #     for i, j in enumerate(range(len(path)-2, -1, -1), 3):
+        #         plots[i].set_positions([path_xs[i], path_ys[i]], [path_xs[i + 1], path_ys[i + 1]])
+        #     # plots[len(plots)-1]
+        #     return plots
+        #
+        # mywriter = animation.FFMpegWriter()
+        # ani = animation.FuncAnimation(fig, update, frames=np.arange(0, len(movesets)), interval=200)
+        # ani.save('asd.mp4', writer=mywriter)
 
     def process_moveset(self, moveset):
         movecells = self.movecells.copy()
