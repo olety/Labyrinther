@@ -167,7 +167,7 @@ else:
             found = False
             i = 0
             self.max_iter = min(self.max_iter, 100000)
-            while not found or i > self.max_iter:
+            while not found and i <= self.max_iter:
                 mvs = self._generate_random_moveset()
                 distance, bumps, redundancy, moves = self.labyrinth.process_moveset(mvs)
                 if distance == 0:
