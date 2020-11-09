@@ -13,12 +13,14 @@ from concurrent.futures import ThreadPoolExecutor
 
 executor = ThreadPoolExecutor(1)
 app = Flask(__name__)
+if not os.path.exists("static/"):
+    os.makedirs("static/")
 
 
 @app.route("/", methods=["GET", "POST"])
 def home():
     if request.method == "POST":
-        with open("static/count.txt", "r+") as f:
+        with open("static/count.txt", "w+") as f:
             i = f.readline()
             # TODO: Optimize this?
             if i == "":
