@@ -10,27 +10,27 @@ This application serves as a Flask server that gives you access to a console (`h
 If you want to make your own maze, please look at the format that the mazes have in `example_labyrinths` or edit them to your liking.
 
 <p align="center">
-<img src="pictures/screenshot_setup.png" alt="Online Influence Maximization in Temporal Networks algorithm" /><br/>
+<img src="pictures/screenshot_setup.png" alt="Algorithm set up page" /><br/>
 <sup>Setting up the simulation</sup>
 </p>
 
 Once simulated, you can view the performance of the resulting algorithm as well as the steps that it took (`http://127.0.0.1:5000/<simulation-id>`, ex: `http://127.0.0.1:5000/47`)
 
 <p align="center">
-<img src="pictures/screenshot_ res1.png" alt="Online Influence Maximization in Temporal Networks algorithm" /><br/>
+<img src="pictures/screenshot_res1.png" alt="Showing set up variables and whether the algorithm won" /><br/>
 <sup>Result page (1) - Set up values and winner status</sup>
 </p>
 
 
 <p align="center">
-<img src="pictures/screenshot_ res2.png" alt="Online Influence Maximization in Temporal Networks algorithm" /><br/>
+<img src="pictures/screenshot_res2.png" alt="Charts section" /><br/>
 <sup>Result page (2) - Progression charts</sup>
 </p>
 
 In the chart above, orange circle marks the start of the labyrinth, gold square - its end, red triangle means marks a point where one iteration of the algorithm died, and the purple X - the final point of the final iteration of the algorithm.
 
 <p align="center">
-<img src="pictures/screenshot_ res3.png" alt="Online Influence Maximization in Temporal Networks algorithm" /><br/>
+<img src="pictures/screenshot_res3.png" alt="The step sequence of the final algorithm" /><br/>
 <sup>Result page (3) - Final algorithm steps</sup>
 </p>
 
