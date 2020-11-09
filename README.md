@@ -7,7 +7,7 @@ This is a project developed for an undergraduate course "Introduction to Artific
 The task given to us was to make a program that would solve mazes using a genetic algorithm, representing the path itself as a sequence of bits (2 bits is enough to encode top/bottom/left/right). 
 
 This application serves as a Flask server that gives you access to a console (`http://127.0.0.1:5000/`) allowing you to run different simulations. While you have to provide a maze that the algorithm will solve, there are some example mazes (2x2, 3x3, 5x5 and 10x10) in the project itself, in the directory `example_labyrinths`.
-If you want to make your own maze, please look at the format that the mazes have in `example_labyrinths` or edit them to your liking.
+If you want to make your own maze, please look at the format that the mazes have in `example_labyrinths` or edit them to your liking. You can also generate mazes by using the [labyrith module](https://github.com/olety/Labyrinther/blob/master/genetic/genetic/labyrinth.py).
 
 <p align="center">
 <img src="pictures/screenshot_setup.png" alt="Algorithm set up page" /><br/>
