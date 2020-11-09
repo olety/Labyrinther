@@ -262,7 +262,7 @@ class Labyrinth:
 
     def plot_anim(self, movesets, **kwargs):
         pass
-        # DOESNT WORK SINE THE LENGTH OF A MOVESET IS VARIABLE
+        # DOESNT WORK SINCE THE LENGTH OF A MOVESET IS VARIABLE
         # setup = self.plot_moveset(movesets[0], show=False, export=True, export_plots=True, plot=True)
         # fig = setup['fig']
         # ax = setup['ax']
